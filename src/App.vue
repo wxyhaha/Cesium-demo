@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue'
 import { TileMapServiceImageryProvider, Viewer, buildModuleUrl,Ion} from 'cesium'
 import 'cesium/Build/CesiumUnminified/Widgets/widgets.css'
+import * as Cesium from "cesium";
+import {handleDraw} from './utils/drawFun'
 
 const viewerDivRef = ref<HTMLDivElement>()
 window.CESIUM_BASE_URL = 'libs/cesium/'
@@ -56,15 +58,33 @@ onMounted(() => {
   mapViewer.value.scene.globe.depthTestAgainstTerrain = true
   mapViewer.value.cesiumWidget._creditContainer.style.display = 'none'
 })
+
 </script>
 
 <template>
-  <div id="cesium-viewer" ref="viewerDivRef"></div>
+  <div id="cesium-viewer" ref="viewerDivRef">
+    <div class="handleButtons">
+      <el-button @click="handleDraw('point',mapViewer)">画点</el-button>
+      <el-button @click="handleDraw('Polyline',mapViewer)">画线</el-button>
+      <el-button @click="handleDraw('Polygon',mapViewer)">画面</el-button>
+    </div>
+  </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 #cesium-viewer {
   width: 100%;
   height: 100%;
+  position: relative;
+}
+.handleButtons{
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  display: flex;
+  z-index: 99;
+  >button{
+    margin: 0 10px;
+  }
 }
 </style>
