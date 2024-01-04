@@ -4,9 +4,14 @@ import { TileMapServiceImageryProvider, Viewer, buildModuleUrl,Ion} from 'cesium
 import 'cesium/Build/CesiumUnminified/Widgets/widgets.css'
 import * as Cesium from "cesium";
 import {handleDraw} from './utils/drawFun'
+import {czml} from "../public/test.ts";
 
 const viewerDivRef = ref<HTMLDivElement>()
+const dataSource = new Cesium.CzmlDataSource();
+
+
 window.CESIUM_BASE_URL = 'libs/cesium/'
+
 
 Ion.defaultAccessToken =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyZmNlZDU1MS01YTQ5LTQ1MmUtYWEwNy1mODE0ZmVkNGRjNjkiLCJpZCI6NjQ2MzksImlhdCI6MTYyOTM1NzA4N30.2j6cvbNnE4Y9q1vpkUgefr35Gw9anPiuWegkPPpIl1I'
@@ -57,7 +62,35 @@ onMounted(() => {
 
   mapViewer.value.scene.globe.depthTestAgainstTerrain = true
   mapViewer.value.cesiumWidget._creditContainer.style.display = 'none'
+
+  mapViewer.value.dataSources.add(dataSource);
 })
+
+let entity = null
+const handleLoadCzml=()=>{
+  console.log('czml',czml)
+  Cesium.CzmlDataSource.load(czml).then((data) => {
+    dataSource.value = data
+    mapViewer.value.dataSources.add(data)
+  })
+  mapViewer.value.clock.shouldAnimate = true
+  mapViewer.value.camera.flyTo({
+    destination : Cesium.Cartesian3.fromDegrees(120.1905, 30.2509, 5000),
+    duration : 3
+  });
+
+}
+
+const setRoamView = (entity, target, viewer) => {
+  if (entity) {
+    const center = entity.position.getValue(viewer.clock.currentTime)
+    console.log("center", center);
+    if (center) {
+      const vector = new Cesium.Cartesian3(target.x - center.x, target.y - center.y, 100)
+      viewer.camera.lookAt(center, vector)
+    }
+  }
+}
 
 </script>
 
@@ -67,6 +100,7 @@ onMounted(() => {
       <el-button @click="handleDraw('point',mapViewer)">画点</el-button>
       <el-button @click="handleDraw('Polyline',mapViewer)">画线</el-button>
       <el-button @click="handleDraw('Polygon',mapViewer)">画面</el-button>
+      <el-button @click="handleLoadCzml">加载CZML</el-button>
     </div>
   </div>
 </template>
