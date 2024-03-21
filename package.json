@@ -9,10 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "axios": "^1.6.8",
     "cesium": "1.104",
     "element-plus": "^2.4.4",
     "sass": "^1.69.5",
-    "vue": "^3.3.11"
+    "vue": "^3.3.11",
+    "wkt-parser-helper": "^4.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.2",
