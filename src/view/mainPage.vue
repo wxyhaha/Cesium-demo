@@ -12,6 +12,7 @@
       <el-button @click="handleDraw('point',cesiumMapRef.mapViewer)">画点</el-button>
       <el-button @click="handleDraw('Polyline',cesiumMapRef.mapViewer)">画线</el-button>
       <el-button @click="handleDraw('Polygon',cesiumMapRef.mapViewer)">画面</el-button>
+      <el-button @click="handleEdit(cesiumMapRef.mapViewer)">编辑</el-button>
       <el-button @click="handleLoadCzml">加载CZML</el-button>
     </div>
   </div>
@@ -22,7 +23,7 @@ import {ref, onMounted} from 'vue'
 import axios from "axios";
 import {calcFromTo} from "../utils/tools";
 import CesiumMap from '../components/cesiumMap.vue'
-import {handleDraw} from '../utils/drawFun'
+import {handleDraw,handleEdit} from '../utils/drawFun'
 import * as Cesium from "cesium";
 import {czml} from "../../public/test";
 

@@ -112,15 +112,16 @@ export function addArea (viewer,area, positions) {
 }
 
 /* 绘制函数 */
-export function drawPointLabel (viewer,position, pointNum?) {
+export function drawPointLabel (viewer,position,associatedId?, pointNum?) {
     // 本质上就是添加一个点的实体
     return viewer.entities.add({
         name: '点几何对象',
         position: position,
+        associatedId:associatedId,
         point: {
             color: Cesium.Color.WHEAT,
-            pixelSize: 5,
-            outlineWidth: 1,
+            pixelSize: 10,
+            outlineWidth: 3,
             disableDepthTestDistance: Number.POSITIVE_INFINITY, //
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND, // 规定贴地
             eyeOffset: new Cesium.Cartesian3(0, 0, -10000)
@@ -145,7 +146,7 @@ export function drawPoint (viewer,position) {
         position: position,
         point: {
             color: Cesium.Color.WHEAT,
-            pixelSize: 5,
+            pixelSize: 10,
             outlineWidth: 3,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND // 规定贴地
@@ -171,10 +172,11 @@ export function drawPolyline (viewer,positions) {
         }
     })
 }
-export function drawPolygon (viewer,positions) {
+export function drawPolygon (viewer,positions,associatedId?) {
     if (positions.length < 2) return
     return viewer.entities.add({
         name: '面几何对象',
+        associatedId:associatedId,
         polygon: {
             hierarchy: positions,
             // eslint-disable-next-line new-cap

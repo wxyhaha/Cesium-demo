@@ -1,4 +1,5 @@
 import * as Cesium from "cesium";
+import { Cartesian3 } from 'cesium'
 import {ElMessage} from "element-plus";
 import {
     addArea,
@@ -12,6 +13,7 @@ import {
     getMidpoint
 } from "./measureOnMap";
 import {ref} from "vue";
+import {guid} from "./tools";
 
 const tempEntities = ref([])
 const pointNum = ref(0)
@@ -142,6 +144,7 @@ export const handleDraw=(type,viewer)=>{
             activeShapePoints = []
         }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     }else if(type==='Polygon'){
+        const associatedId=guid()
         ElMessage({message: '点击鼠标左键选点，选点数量须为3个及以上，选点结束点击鼠标右键计算面积', type: 'success'})
         // 取消鼠标双击事件
         viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK)
@@ -159,17 +162,17 @@ export const handleDraw=(type,viewer)=>{
         // 左键单击开始画线
         handler.setInputAction(function (click) {
             let earthPosition = viewer.scene.pickPosition(click.position)
-            if (Cesium.defined(earthPosition)) {
-                if (activeShapePoints.length === 0) {
-                    floatingPoint1 = drawPoint(viewer, earthPosition)
-                    activeShapePoints.push(earthPosition)
-                    const dynamicPositions = new Cesium.CallbackProperty(function () {
-                        return new Cesium.PolygonHierarchy(activeShapePoints)
-                    }, false)
-                    activeShape1 = drawPolygon(viewer, dynamicPositions)
-                }
-                activeShapePoints.push(earthPosition)
-            }
+            // if (Cesium.defined(earthPosition)) {
+            //     if (activeShapePoints.length === 0) {
+            //         floatingPoint1 = drawPoint(viewer, earthPosition)
+            //         activeShapePoints.push(earthPosition)
+            //         const dynamicPositions = new Cesium.CallbackProperty(function () {
+            //             return new Cesium.PolygonHierarchy(activeShapePoints)
+            //         }, false)
+            //         activeShape1 = drawPolygon(viewer, dynamicPositions,associatedId)
+            //     }
+            //     activeShapePoints.push(earthPosition)
+            // }
             // 获取位置信息
             let ray = viewer.camera.getPickRay(click.position)
             position = viewer.scene.globe.pick(ray, viewer.scene)
@@ -177,7 +180,7 @@ export const handleDraw=(type,viewer)=>{
             let tempLength = tempPoints.length // 记录点数
             pointNum.value += 1
             // 调用绘制点的接口
-            let point = drawPointLabel(viewer, tempPoints[tempPoints.length - 1])
+            let point = drawPointLabel(viewer, tempPoints[tempPoints.length - 1],associatedId)
             tempEntities1.push(point)
             // 存在超过一个点时
             if (tempLength > 1) {
@@ -198,10 +201,12 @@ export const handleDraw=(type,viewer)=>{
                     // 闭合最后一条线
                     let pointline = drawPolyline(viewer, [tempPoints[0], tempPoints[tempPoints.length - 1]])
                     tempEntities1.push(pointline)
-                    drawPolygon(viewer, tempPoints)
+                    console.log('tempPoints',tempPoints)
+                    drawPolygon(viewer, tempPoints,associatedId)
                     let pointArea = getArea(tempPoints)
                     addArea(viewer, JSON.stringify(pointArea), tempPoints)
                     tempEntities1.push(tempPoints)
+                    tempEntities1.forEach(e=>viewer.entities.remove(e))
                     handler.destroy()
                     handler = null
                 }
@@ -213,4 +218,62 @@ export const handleDraw=(type,viewer)=>{
             activeShapePoints = []
         }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
     }
+}
+
+
+
+export const handleEdit=(viewer)=>{
+    const {scene}=viewer
+    let handler = new Cesium.ScreenSpaceEventHandler(scene.canvas)
+    let onEditPoint=[]
+    let newVertexs=[]
+    let pickEntity
+
+    let leftDownFlag=false
+    let pointDraged
+
+    handler.setInputAction(function (movement) {
+        pickEntity = scene.pick(movement.position);
+        if(pickEntity.id.polygon){
+            pickEntity.id.polygon.hierarchy._value.positions.forEach(e=>{
+                onEditPoint.push(drawPointLabel(viewer,e))
+            })
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
+    handler.setInputAction(function (evt) {
+        pointDraged = scene.pick(evt.position);
+        leftDownFlag = true;
+        if (Cesium.defined(pointDraged) && pointDraged.id) {
+            scene.screenSpaceCameraController.enableRotate = false;//锁定相机
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+    handler.setInputAction(function (evt) {
+        leftDownFlag = false;
+        pointDraged=null;
+        scene.screenSpaceCameraController.enableRotate = true;//解锁相机
+    }, Cesium.ScreenSpaceEventType.LEFT_UP);
+    handler.setInputAction(function (evt) {
+        newVertexs=[]
+        if (leftDownFlag && pointDraged != null) {
+            const startPoint=scene.pick(evt.startPosition);
+            if(!startPoint) return
+            let ray = viewer.camera.getPickRay(evt.endPosition);
+            startPoint.id.position._value=scene.globe.pick(ray, scene)
+            onEditPoint.forEach(e=>{
+                newVertexs.push(e.position._value)
+            })
+            pickEntity.id.polygon.hierarchy._value.positions=newVertexs
+            viewer.entities.values.forEach(entity => {
+                if (entity.polygon && entity.id===pickEntity?.id.id) {
+                    entity.polygon.hierarchy = newVertexs;
+                }
+            });
+        }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+    handler.setInputAction(function () {
+        handler.destroy()
+        onEditPoint.forEach(e=>viewer.entities.remove(e))
+    }, Cesium.ScreenSpaceEventType.RIGHT_CLICK)
 }

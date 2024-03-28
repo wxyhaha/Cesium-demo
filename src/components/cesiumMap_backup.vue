@@ -8,7 +8,6 @@ import axios from "axios";
 import { parseFromWK } from 'wkt-parser-helper'
 import { Cartesian3 } from 'cesium'
 import {addImagery, removeOtherRemoteImg} from "../utils/mapUtils";
-import GeTileImageryProvider from '../utils/GeTile'
 
 const dataSource = new Cesium.CzmlDataSource();
 const mapViewer=ref()
@@ -17,7 +16,8 @@ const mapViewer=ref()
 window.CESIUM_BASE_URL = 'libs/cesium/'
 
 
-Ion.defaultAccessToken =window._CONFIG.CesiumToken
+Ion.defaultAccessToken =
+    'xxx'
 
 const cesiumOption={
   animation: false, // 隐藏动画控件
@@ -53,7 +53,6 @@ const cesiumOption={
   },
 }
 
-
 onMounted(() => {
   initMap()
 })
@@ -71,9 +70,9 @@ const loadRemoteImgToMap=(imgInfo)=>{
     filepath,
     isdb: "false"
   }
-  const url = `${window._CONFIG.baseApi}/preview2/rscloud/wmts/InstructServer/*`
+  const url = 'http://xxx/preview2/rscloud/wmts/InstructServer/*'
   axios.post(url, params).then((res) => {
-    const imgUrl = `${window._CONFIG.baseApi}/preview2/rscloud/wmts/MapServer?sid=${res.data.sid}&service=wmts&request=getTile&tileMatrix={z}&TileRow={x}&TileCol={y}&format=image/jpg`
+    const imgUrl = `http://xxx/preview2/rscloud/wmts/MapServer?sid=${res.data.sid}&service=wmts&request=getTile&tileMatrix={z}&TileRow={x}&TileCol={y}&format=image/jpg`
     const west=imgInfo.geometry.coordinates[0][0][0]
     const south=imgInfo.geometry.coordinates[0][1][1]
     const east=imgInfo.geometry.coordinates[0][2][0]
@@ -104,25 +103,17 @@ const loadRemoteImgToMap=(imgInfo)=>{
 }
 
 const initMap=()=>{
-  const base = new Cesium.UrlTemplateImageryProvider({
-    url: `${window._CONFIG.baseMap}/timedb/tiles/normal?dbname=getile&level={z}&col={x}&row={y}&mode=near`,
-    tilingScheme: new Cesium.GeographicTilingScheme({
-      numberOfLevelZeroTilesX: 2,
-      numberOfLevelZeroTilesY: 2,
-      rectangle: new Cesium.Rectangle(-Math.PI, -Math.PI, Math.PI, Math.PI),
-    }),
-  });
-
   mapViewer.value=new Viewer('cesium-viewer', {
-    // imageryProvider: base,
+    imageryProvider: new TileMapServiceImageryProvider({
+      url: 'libs/cesium/Assets/Textures/NaturalEarthII',
+    }),
     ...cesiumOption
   })
 
-  mapViewer.value.imageryLayers.removeAll()
-  mapViewer.value.imageryLayers.addImageryProvider(base)
-
   mapViewer.value.scene.globe.depthTestAgainstTerrain = true
   mapViewer.value.cesiumWidget._creditContainer.style.display = 'none'
+
+  mapViewer.value.dataSources.add(dataSource);
 }
 
 const getImageryCenter=(p1, p2)=>{
